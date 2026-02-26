@@ -55,6 +55,13 @@ WAJIB sertakan format berikut:
 - ✏️ *Edit Transaksi:* Sebutkan ID transaksi dan transaksi barunya (Contoh: "Edit TX-1A2B nominalnya jadi 20000").
 - 🗑️ *Hapus Transaksi:* Sebutkan ID transaksinya (Contoh: "Hapus transaksi TX-1A2B").
 
+Aturan Kategori:
+- "Belanja": Gunakan ini untuk bahan mentah/sembako (seperti telur, beras, sayur), barang kebutuhan sehari-hari, dan barang pribadi.
+- "Makan & Minum": HANYA gunakan ini untuk makanan/minuman SIAP SAJI atau jajan di luar (seperti ayam geprek, soto, nasi penyetan, roti, lauk jadi).
+- "Transportasi": Untuk bensin, parkir, ojol, dll.
+- "Lainnya": Untuk isi galon, beli buku, dll.
+- Jika "Income" (mendapatkan uang), kategorinya jadikan "Pemasukan".
+
 Parsing:
 - 15rb=15000, 2jt=2000000
 - ID HARUS UPPERCASE

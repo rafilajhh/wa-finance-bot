@@ -1,13 +1,11 @@
-import "dotenv/config";
-import pkg from "whatsapp-web.js";
-import qrcode from 'qrcode-terminal';
-import { GoogleGenAI } from "@google/genai";
-import { GoogleSpreadsheet } from 'google-spreadsheet';
-import { JWT } from 'google-auth-library';
+require("dotenv/config");
+const { Client, LocalAuth } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+const { GoogleGenAI } = require("@google/genai");
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+const { JWT } = require("google-auth-library");
 
 const ai = new GoogleGenAI({});
-const { Client, LocalAuth } = pkg;
-const { generate } = qrcode;
 
 const serviceAccountAuth = new JWT({
   email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -189,7 +187,7 @@ async function aiResult(message) {
 }
     
 client.on('qr', qr => {
-    generate(qr, {small: true});
+    qrcode.generate(qr, {small: true});
 });
 
 client.on('ready', () =>{

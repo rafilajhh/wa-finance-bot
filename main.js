@@ -41,7 +41,7 @@ Format:
 }
 
 Intent Rules:
-- add → isi data_transaksi, id=null, message=null
+- add → isi data_transaksi, tangkap nama transaksi/barang SECARA LENGKAP dan DETAIL persis seperti deskripsi user, id=null, message=null
 - edit → isi id (UPPERCASE) & data_transaksi, message=null
 - delete → isi id (UPPERCASE), data_transaksi=null, message=null
 - chat → isi message saja

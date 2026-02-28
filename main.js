@@ -127,6 +127,7 @@ async function editSheet(id, datatransaksi) {
 
 async function aiResult(message) {
     try {
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
         const systemInstruction = `
 Kamu adalah Asisten Keuangan WhatsApp.
 WAJIB balas dengan JSON VALID saja. Tanpa markdown, backtick, atau teks tambahan.
@@ -174,7 +175,7 @@ Parsing:
 - Income: gaji/dapat uang
 - Spending: beli/bayar/tagihan
 
-Hari ini: ${new Date().toISOString().split('T')[0]}`;
+Hari ini: ${today}`;
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-lite",
             contents: message,

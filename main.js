@@ -22,10 +22,10 @@ const client = new Client({
     }
 });
 
-async function addSheet(datatransaksi) {
+async function addSheet(datatransaksi, month) {
     try {
         await doc.loadInfo(); 
-        const sheet = doc.sheetsByTitle[new Date().toLocaleDateString("id-ID", {month: "long"})];
+        const sheet = doc.sheetsByTitle[month];
         await sheet.loadHeaderRow(2);
 
         let ids = [];
@@ -51,12 +51,12 @@ async function addSheet(datatransaksi) {
     }
 };
 
-async function deleteSheet(id) {
+async function deleteSheet(id, month) {
     try {
         if (!id || id.length === 0) return false;
 
         await doc.loadInfo(); 
-        const sheet = doc.sheetsByTitle[new Date().toLocaleDateString("id-ID", {month: "long"})];
+        const sheet = doc.sheetsByTitle[month];
         await sheet.loadHeaderRow(2);
 
         const rows = await sheet.getRows();
@@ -86,12 +86,13 @@ async function deleteSheet(id) {
     }
 };
 
-async function editSheet(id, datatransaksi) {
+async function editSheet(id, datatransaksi, month) {
     try {
         if (!id || id.length === 0) return false;
 
         await doc.loadInfo(); 
-        const sheet = doc.sheetsByTitle[new Date().toLocaleDateString("id-ID", {month: "long"})];
+        const sheet = doc.sheetsByTitle[month];
+
         await sheet.loadHeaderRow(2);
 
         const rows = await sheet.getRows();
@@ -128,54 +129,57 @@ async function editSheet(id, datatransaksi) {
 async function aiResult(message) {
     try {
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
         const systemInstruction = `
-Kamu adalah Asisten Keuangan WhatsApp.
-WAJIB balas dengan JSON VALID saja. Tanpa markdown, backtick, atau teks tambahan.
+            Kamu adalah Asisten Keuangan WhatsApp.
+            WAJIB balas dengan JSON VALID saja. Tanpa markdown, backtick, atau teks tambahan.
 
-Format:
-{
- "intent": "add" | "edit" | "delete" | "chat",
- "message": string | null,
- "id": string[] | null,
- "data_transaksi": [{
-   "tanggal": "YYYY-MM-DD" | null,
-   "transaksi": string | null,
-   "nominal": number | null,
-   "cashflow": "Income" | "Spending" | null,
-   "kategori": "Makan & Minum | Transportasi | Pulsa & Internet | Hiburan | Belanja | Tagihan | Pemasukan | Lainnya" | null
- }] | null
-}
+            Format:
+            {
+             "intent": "add" | "edit" | "delete" | "chat",
+             "message": string | null,
+             "id": string[] | null,
+             "month": "Januari" | "Februari" | "Maret" | "April" | "Mei" | "Juni" | "Juli" | "Agustus" | "September" | "Oktober" | "November" | "Desember" | null,
+             "data_transaksi": [{
+               "tanggal": "YYYY-MM-DD" | null,
+               "transaksi": string | null,
+               "nominal": number | null,
+               "cashflow": "Income" | "Spending" | null,
+               "kategori": "Makan & Minum | Transportasi | Pulsa & Internet | Hiburan | Belanja | Tagihan | Pemasukan |             Lainnya" | null
+             }] | null
+            }
 
-Intent Rules:
-- add → isi data_transaksi, tangkap nama transaksi/barang SECARA LENGKAP dan DETAIL persis seperti deskripsi user, id=null, message=null
-- edit → isi id (UPPERCASE) & data_transaksi, message=null
-- delete → isi id (UPPERCASE), data_transaksi=null, message=null
-- chat → isi message saja
+            Intent Rules:
+            - add → isi data_transaksi, tangkap nama transaksi/barang SECARA LENGKAP dan DETAIL persis seperti deskripsi user, id=null, message=null, month=bulan sekarang
+            - edit → isi id (UPPERCASE) & data_transaksi, message=null, month=bulan sekarang
+            - delete → isi id (UPPERCASE), data_transaksi=null, message=null, month=bulan sekarang
+            - chat → isi message saja
 
-Help Mode:
-Jika user kirim "help", "bantuan", "cara pakai", atau bertanya fitur,
-set intent="chat" dan isi message dengan panduan ramah + bullet points.
-WAJIB sertakan format berikut:
+            Help Mode:
+            Jika user kirim "help", "bantuan", "cara pakai", atau bertanya fitur,
+            set intent="chat" dan isi message dengan panduan ramah + bullet points.
+            WAJIB sertakan format berikut:
 
-- 📝 *Tambah Transaksi:* Cukup ketik natural (Contoh: "Beli nasi goreng 15rb" atau "Gaji bulanan masuk 2 juta").
-- ✏️ *Edit Transaksi:* Sebutkan ID transaksi dan transaksi barunya (Contoh: "Edit TX-1A2B nominalnya jadi 20000").
-- 🗑️ *Hapus Transaksi:* Sebutkan ID transaksinya (Contoh: "Hapus transaksi TX-1A2B").
+            - 📝 *Tambah Transaksi:* Cukup ketik natural (Contoh: "Beli nasi goreng 15rb" atau "Gaji bulanan masuk 2 juta").
+            - ✏️ *Edit Transaksi:* Sebutkan ID transaksi dan transaksi barunya (Contoh: "Edit TX-1A2B nominalnya jadi 20000").
+            - 🗑️ *Hapus Transaksi:* Sebutkan ID transaksinya (Contoh: "Hapus transaksi TX-1A2B").
 
-Aturan Kategori:
-- "Belanja": Gunakan ini untuk bahan mentah/sembako (seperti telur, beras, sayur), barang kebutuhan sehari-hari, dan barang pribadi.
-- "Makan & Minum": HANYA gunakan ini untuk makanan/minuman SIAP SAJI atau jajan di luar (seperti ayam geprek, soto, nasi penyetan, roti, lauk jadi).
-- "Transportasi": Untuk bensin, parkir, ojol, dll.
-- "Lainnya": Untuk isi galon, beli buku, dll.
-- Jika "Income" (mendapatkan uang), kategorinya jadikan "Pemasukan".
+            Aturan Kategori:
+            - "Belanja": Gunakan ini untuk bahan mentah/sembako (seperti telur, beras, sayur), barang kebutuhan sehari-hari,            dan barang pribadi.
+            - "Makan & Minum": HANYA gunakan ini untuk makanan/minuman SIAP SAJI atau jajan di luar (seperti ayam geprek, soto,             nasi penyetan, roti, lauk jadi).
+            - "Transportasi": Untuk bensin, parkir, ojol, dll.
+            - "Lainnya": Untuk isi galon, beli buku, dll.
+            - Jika "Income" (mendapatkan uang), kategorinya jadikan "Pemasukan".
 
-Parsing:
-- 15rb=15000, 2jt=2000000
-- ID HARUS UPPERCASE
-- Tanpa tanggal → gunakan hari ini
-- Income: gaji/dapat uang
-- Spending: beli/bayar/tagihan
+            Parsing:
+            - 15rb=15000, 2jt=2000000
+            - ID HARUS UPPERCASE
+            - Tanpa tanggal → gunakan hari ini
+            - Income: gaji/dapat uang
+            - Spending: beli/bayar/tagihan
 
-Hari ini: ${today}`;
+            Hari ini: ${today}`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-lite",
             contents: message,
@@ -184,7 +188,7 @@ Hari ini: ${today}`;
                 responseMimeType: "application/json",
             }
         });
-
+        console.log("AI Response:", response.text);
         const jsonResult = JSON.parse(response.text)
         return jsonResult;
     } catch (error) {        
@@ -211,7 +215,7 @@ client.on('message',  async (msg) =>{
 
         const jsonResult = await aiResult(msg.body);
         if (jsonResult.intent === 'add') {
-            const ids = await addSheet(jsonResult.data_transaksi);
+            const ids = await addSheet(jsonResult.data_transaksi, jsonResult.month);
             
             let messageReply = `📝 *TRANSAKSI BERHASIL DICATAT*\n`;
             
@@ -227,9 +231,9 @@ client.on('message',  async (msg) =>{
                 await msg.reply("Mohon sertakan data transaksi yang baru untuk mengedit.");
 
             } else {
-                const data = await editSheet(jsonResult.id, jsonResult.data_transaksi);
+                const data = await editSheet(jsonResult.id, jsonResult.data_transaksi, jsonResult.month);
                 if (data) {
-                    let messageReply = `✏️ *TRANSAKSI BERHASIL DIPERBARUI*\n\n━━━━━━━━━━━━━━━━━━\n🆔 *ID:* \`${jsonResult.id[0]}\`\n📅 *Date:* ${data.tanggal}\n📝 *Transaction:* ${data.transaksi}\n💰 *Nominal:* Rp ${data.nominal.toLocaleString('id-ID')}\n${cashflowIcons[data.cashflow] || "📊"} *Cashflow:* ${data.cashflow}\n${categoryIcons [data.kategori] || "📂"} *Category:*  ${data.kategori}\n━━━━━━━━━━━━━━━━━━`;
+                    let messageReply = `✏️ *TRANSAKSI BERHASIL DIPERBARUI*\n\n━━━━━━━━━━━━━━━━━━\n🆔 *ID:* \`${jsonResult.id[0]}\`\n📅 *Date:* ${data.tanggal}\n📝 *Transaction:* ${data.transaksi}\n💰 *Nominal:* ${data.nominal.toLocaleString('id-ID')}\n${cashflowIcons[data.cashflow] || "📊"} *Cashflow:* ${data.cashflow}\n${categoryIcons[data.kategori] || "📂"} *Category:*  ${data.kategori}\n━━━━━━━━━━━━━━━━━━`;
 
                     await msg.reply(messageReply);
                     await msg.react("✏️");
@@ -240,7 +244,7 @@ client.on('message',  async (msg) =>{
             }
 
         } else if (jsonResult.intent === 'delete') {
-            if (await deleteSheet(jsonResult.id)) {
+            if (await deleteSheet(jsonResult.id, jsonResult.month)) {
                 let messageReply = `🗑️ *TRANSAKSI BERHASIL DIHAPUS*\n\nTransaksi dengan *ID* \`${jsonResult.id.join(", ")}\` telah berhasil dihapus.`;
 
                 await msg.reply(messageReply);

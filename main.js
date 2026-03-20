@@ -1,11 +1,14 @@
 require("dotenv/config");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
-const { GoogleGenAI } = require("@google/genai");
+const OpenAI = require("openai");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { JWT } = require("google-auth-library");
 
-const ai = new GoogleGenAI({});
+const ai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 const serviceAccountAuth = new JWT({
   email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -180,17 +183,19 @@ async function aiResult(message) {
 
             Hari ini: ${today}`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
-            contents: message,
-            config: {
-                systemInstruction: systemInstruction,
-                responseMimeType: "application/json",
-            }
+        const response = await ai.chat.completions.create({
+            model: "arcee-ai/trinity-large-preview:free",
+            messages: [
+                {role: "system", content: systemInstruction},
+                {role: "user", content: message}
+            ],
+            response_format: {type: "json_object"},
         });
-        console.log("AI Response:", response.text);
-        const jsonResult = JSON.parse(response.text)
-        return jsonResult;
+
+        const text = response.choices[0].message.content;
+        console.log("AI Response:", text);
+        return JSON.parse(text);
+        
     } catch (error) {        
         throw new Error(`Error AI : ${error.message}`);
     }

@@ -27,29 +27,24 @@ const client = new Client({
 
 const history = [];
 
-async function addSheet(datatransaksi, month) {
+async function addSheet(jsonResult, month) {
     try {
         await doc.loadInfo(); 
         const sheet = doc.sheetsByTitle[month];
         await sheet.loadHeaderRow(2);
 
-        let ids = [];
-
-        for (const data of datatransaksi) {
-
-            ids.push(id);
-        
+        for (let i = 0; i < jsonResult.data_transaksi.length; i++) {
+            const data = jsonResult.data_transaksi[i];
             await sheet.addRow({
-                ID: id,
-                Date: data.tanggal,
-                Transactions: data.transaksi,
-                Nominal: data.nominal,
-                Cashflow: data.cashflow,
-                Category: data.kategori,
+                'ID': jsonResult.id[i],
+                'Date': data.tanggal,
+                'Transactions': data.transaksi,
+                'Nominal': data.nominal,
+                'Cashflow': data.cashflow,
+                'Category': data.kategori,
             });
         }
 
-        return ids;
     } catch (error) {
         throw new Error(`Error menambahkan data transaksi: ${error.message}`);
     }
@@ -195,12 +190,22 @@ async function aiResult(message) {
         });
 
         const text = response.choices[0].message.content;
-        console.log("AI Response:", text);
+        const parsed = JSON.parse(text);
+
+        if (parsed.intent === "add") {
+            parsed.id = [];
+
+            for (const data of parsed.data_transaksi) {
+                const id = "TX-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+                parsed.id.push(id);
+            }
+        }
 
         history.push({role:"user", content:message});
-        history.push({role:"assistant", content:text});
+        history.push({role:"assistant", content:JSON.stringify(parsed)});
 
-        return JSON.parse(text);
+        console.log("AI Response:", parsed);
+        return parsed;
         
     } catch (error) {        
         throw new Error(`Error AI : ${error.message}`);
@@ -232,12 +237,12 @@ client.on('message',  async (msg) =>{
 
         const jsonResult = await aiResult(msg.body);
         if (jsonResult.intent === 'add') {
-            const ids = await addSheet(jsonResult.data_transaksi, jsonResult.month);
+            await addSheet(jsonResult, jsonResult.month);
             
             let messageReply = `📝 *TRANSAKSI BERHASIL DICATAT*\n`;
             
             jsonResult.data_transaksi.forEach((data, index) => {
-                messageReply += `\n━━━━━━━━━━━━━━━━━━\n🆔 *ID:* \`${ids[index]}\`\n📅 *Date:* ${data.tanggal}\n📝 *Transaction:* ${data.transaksi}\n💰 *Nominal:* Rp ${data.nominal.toLocaleString('id-ID')}\n${cashflowIcons[data.cashflow] || "📊"} *Cashflow:* ${data.cashflow}\n${categoryIcons[data.kategori] || "📂"} *Category:*  ${data.kategori}\n━━━━━━━━━━━━━━━━━━`;
+                messageReply += `\n━━━━━━━━━━━━━━━━━━\n🆔 *ID:* \`${jsonResult.id[index]}\`\n📅 *Date:* ${data.tanggal}\n📝 *Transaction:* ${data.transaksi}\n💰 *Nominal:* Rp ${data.nominal.toLocaleString('id-ID')}\n${cashflowIcons[data.cashflow] || "📊"} *Cashflow:* ${data.cashflow}\n${categoryIcons[data.kategori] || "📂"} *Category:*  ${data.kategori}\n━━━━━━━━━━━━━━━━━━`;
             });
             
             await msg.reply(messageReply.trim());

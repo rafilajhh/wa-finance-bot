@@ -25,6 +25,8 @@ const client = new Client({
     }
 });
 
+const history = [];
+
 async function addSheet(datatransaksi, month) {
     try {
         await doc.loadInfo(); 
@@ -34,7 +36,6 @@ async function addSheet(datatransaksi, month) {
         let ids = [];
 
         for (const data of datatransaksi) {
-            const id = "TX-" + Math.random().toString(36).substring(2, 7).toUpperCase();
 
             ids.push(id);
         
@@ -187,6 +188,7 @@ async function aiResult(message) {
             model: "arcee-ai/trinity-large-preview:free",
             messages: [
                 {role: "system", content: systemInstruction},
+                ...history,
                 {role: "user", content: message}
             ],
             response_format: {type: "json_object"},
@@ -194,6 +196,10 @@ async function aiResult(message) {
 
         const text = response.choices[0].message.content;
         console.log("AI Response:", text);
+
+        history.push({role:"user", content:message});
+        history.push({role:"assistant", content:text});
+
         return JSON.parse(text);
         
     } catch (error) {        
@@ -211,10 +217,16 @@ client.on('ready', () =>{
 
 client.on('message',  async (msg) =>{
     try {
-        if ((await msg.getContact()).number !== process.env.OWNER_NUMBER || (await msg.getChat()).isGroup) return;
+        if ((await msg.getContact()).number !== process.env.OWNER_NUMBER || (await msg.getChat()).isGroup) {
+            return;
+        }
+
+        while (history.length > 10) {
+            history.shift();
+        }
 
         await msg.react("🔃")
-
+        
         const categoryIcons = {"Makan & Minum": "🍽️","Transportasi": "🚗","Pulsa & Internet": "📶","Hiburan": "🎮","Belanja": "🛍️","Tagihan": "📄","Pemasukan": "💰"};
         const cashflowIcons = {"Income": "📈", "Spending": "📉"};
 
@@ -234,7 +246,7 @@ client.on('message',  async (msg) =>{
         } else if (jsonResult.intent === 'edit') {
             if (jsonResult.data_transaksi === null) {
                 await msg.reply("Mohon sertakan data transaksi yang baru untuk mengedit.");
-
+                
             } else {
                 const data = await editSheet(jsonResult.id, jsonResult.data_transaksi, jsonResult.month);
                 if (data) {
@@ -251,7 +263,7 @@ client.on('message',  async (msg) =>{
         } else if (jsonResult.intent === 'delete') {
             if (await deleteSheet(jsonResult.id, jsonResult.month)) {
                 let messageReply = `🗑️ *TRANSAKSI BERHASIL DIHAPUS*\n\nTransaksi dengan *ID* \`${jsonResult.id.join(", ")}\` telah berhasil dihapus.`;
-
+                
                 await msg.reply(messageReply);
                 await msg.react("🗑️");
 
@@ -266,9 +278,9 @@ client.on('message',  async (msg) =>{
         }
 
     } catch (error){
-            console.error(error);
-            await msg.reply("Terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi nanti.");
-            await msg.react("❌");
+        console.error(error);
+        await msg.reply("Terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi nanti.");
+        await msg.react("❌");
     }
 });
 

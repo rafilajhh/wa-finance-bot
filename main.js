@@ -225,6 +225,9 @@ Setiap transaksi yang dicatat akan mendapat ID unik (TX-XXXXX) yang bisa dipakai
                 {role: "user", content: message}
             ],
             response_format: {type: "json_object"},
+            plugins: [
+                {id: "response-healing"}
+            ]
         });
 
         const text = response.choices[0].message.content;
